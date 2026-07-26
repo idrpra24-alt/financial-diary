@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Catatan Pengeluaran</title>
+<meta name="theme-color" content="#181A20" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Pengeluaran" />
+<style>
+  :root{
+    --ink:#181A20; --inkSoft:#23262F; --paper:#F5F4EE; --card:#FFFFFF;
+    --line:#E5E3D9; --text:#2A2D35; --muted:#8B8E98; --green:#12876A;
+    --greenSoft:#E4F1EC; --coral:#DC5B44;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--paper);color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    padding-bottom:env(safe-area-inset-bottom);}
+  .mono{font-family:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",Menlo,monospace;font-variant-numeric:tabular-nums;}
+  .wrap{max-width:620px;margin:0 auto;}
+  .band{background:var(--ink);color:#fff;padding:calc(24px + env(safe-area-inset-top)) 22px 24px;position:relative;}
+  .eyebrow{display:flex;align-items:center;gap:8px;opacity:.75;font-size:13px;letter-spacing:.4px;text-transform:uppercase;}
+  .gear{position:absolute;top:calc(20px + env(safe-area-inset-top));right:18px;background:var(--inkSoft);border:1px solid #33363F;color:#fff;border-radius:9px;padding:7px;cursor:pointer;display:flex;}
+  .monthnav{display:flex;align-items:center;justify-content:space-between;margin-top:16px;}
+  .mbtn{background:var(--inkSoft);border:1px solid #33363F;color:#fff;border-radius:8px;padding:7px;cursor:pointer;display:flex;}
+  .total{font-size:34px;font-weight:700;margin-top:2px;letter-spacing:-.5px;}
+  .monthlabel{font-size:13px;opacity:.6;}
+  .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;margin-top:20px;background:#33363F;border-radius:12px;overflow:hidden;}
+  .stat{background:var(--inkSoft);padding:11px 12px;}
+  .stat .k{font-size:11px;opacity:.55;margin-bottom:3px;}
+  .stat .v{font-size:15px;font-weight:600;}
+  .body{padding:20px 18px 0;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;}
+  .cardtitle{font-size:15px;font-weight:600;margin-bottom:12px;}
+  input,select{font-family:inherit;}
+  .lg{width:100%;border:1px solid var(--line);background:var(--card);color:var(--text);
+    border-radius:10px;padding:11px 12px;font-size:15px;outline:none;transition:border-color .15s,box-shadow .15s;}
+  .lg:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--greenSoft);}
+  .amtwrap{position:relative;margin-bottom:12px;}
+  .amtwrap .pre{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;}
+  #amount{padding-left:44px;font-size:22px;font-weight:700;letter-spacing:.2px;}
+  .chips{display:flex;gap:7px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;-webkit-overflow-scrolling:touch;}
+  .chip{display:flex;align-items:center;gap:6px;padding:8px 11px;border-radius:999px;font-size:13px;
+    border:1px solid var(--line);background:var(--card);cursor:pointer;white-space:nowrap;color:var(--text);flex-shrink:0;}
+  .row2{display:flex;gap:10px;margin-bottom:14px;}
+  .row2 #note{flex:1;} .row2 #date{width:150px;}
+  .add{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:none;
+    background:var(--ink);color:#fff;border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;}
+  .add:disabled{opacity:.4;cursor:not-allowed;}
+  .scan{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:1.5px dashed var(--green);
+    background:var(--greenSoft);color:var(--green);border-radius:11px;padding:12px;font-size:14.5px;font-weight:600;cursor:pointer;margin-bottom:12px;}
+  .scanbox{display:flex;align-items:center;gap:12px;margin-bottom:12px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--card);}
+  .scanbox img{width:46px;height:46px;border-radius:8px;object-fit:cover;flex-shrink:0;border:1px solid var(--line);}
+  .scanbox .msg{flex:1;min-width:0;font-size:13.5px;line-height:1.35;}
+  .iconbtn{border:none;background:transparent;color:var(--muted);cursor:pointer;padding:6px;border-radius:8px;display:flex;}
+  .sectlabel{font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin:22px 0 10px;}
+  .brow{margin-bottom:9px;}
+  .brow .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;font-size:13.5px;}
+  .bar{height:6px;background:var(--line);border-radius:99px;overflow:hidden;}
+  .bar > div{height:100%;border-radius:99px;}
+  .daygroup{margin-bottom:18px;}
+  .dayhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;padding:0 2px;}
+  .dayhead .d{font-size:13px;font-weight:600;} .dayhead .t{font-size:13px;color:var(--muted);}
+  .list{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+  .item{display:flex;align-items:center;gap:12px;padding:12px 14px;}
+  .item + .item{border-top:1px solid var(--line);}
+  .ic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .item .name{font-size:14.5px;font-weight:500;} .item .sub{font-size:12.5px;color:var(--muted);margin-top:1px;}
+  .item .amt{font-size:15px;font-weight:600;white-space:nowrap;}
+  .empty{text-align:center;padding:36px 20px;color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:14px;}
+  .settings{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:18px;}
+  .settings h3{margin:0 0 4px;font-size:15px;} .settings p{margin:0 0 12px;font-size:12.5px;color:var(--muted);line-height:1.45;}
+  .settings label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 5px;}
+  .srow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+  .btn2{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:9px;padding:9px 13px;font-size:13.5px;cursor:pointer;font-weight:600;}
+  .btn2.primary{background:var(--green);color:#fff;border-color:var(--green);}
+  .savednote{font-size:12.5px;color:var(--green);margin-top:8px;}
+  .banner{border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:16px;}
+  .banner.err{background:#FCE9E4;color:var(--coral);border:1px solid #F3C7BC;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .spin{animation:spin .9s linear infinite;}
+  svg.i{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+</style>
+</head>
+<body>
+<div class="wrap"><div id="app"></div></div>
+
+<script>
+/* ---------- icons (inline svg) ---------- */
+const I = {
+  wallet:'<path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5"/><path d="M16 12h.01"/>',
+  utensils:'<path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20M21 15V2a5 5 0 0 0-3 5v6c0 1.1.9 2 2 2h1Zm0 0v7"/>',
+  car:'<path d="M19 17h2l-2-7H5l-2 7h2m14 0a2 2 0 1 1-4 0m4 0h-4m-6 0a2 2 0 1 1-4 0m4 0H5"/><path d="M5 10 6.5 5h11L19 10"/>',
+  bag:'<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/>',
+  receipt:'<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1V2l-2 1-2-1-2 1-2-1-2 1-2-1Z"/><path d="M8 7h8M8 11h8M8 15h5"/>',
+  film:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 8h4M17 8h4M3 16h4M17 16h4"/>',
+  heart:'<path d="M3 12h4l2 5 4-12 2 7h6"/>',
+  circle:'<circle cx="12" cy="12" r="9"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  trash:'<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>',
+  x:'<path d="M18 6 6 18M6 6l12 12"/>',
+  cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  left:'<path d="M15 18l-6-6 6-6"/>', right:'<path d="M9 18l6-6-6-6"/>',
+  cam:'<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+  spark:'<path d="M12 3l1.9 4.6L18.5 9l-4.6 1.4L12 15l-1.9-4.6L5.5 9l4.6-1.4z"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.1-2.7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/>',
+  loader:'<path d="M21 12a9 9 0 1 1-6.2-8.5"/>',
+};
+const svg=(k,color,sz)=>`<svg class="i" viewBox="0 0 24 24" ${color?`style="stroke:${color}"`:''} ${sz?`width="${sz}" height="${sz}"`:''}>${I[k]}</svg>`;
+
+/* ---------- data ---------- */
+const CATEGORIES=[
+  {id:'makanan',label:'Makanan & Minuman',color:'#DC5B44',icon:'utensils'},
+  {id:'transport',label:'Transportasi',color:'#2F6DB5',icon:'car'},
+  {id:'belanja',label:'Belanja',color:'#C9A24B',icon:'bag'},
+  {id:'tagihan',label:'Tagihan',color:'#12876A',icon:'receipt'},
+  {id:'hiburan',label:'Hiburan',color:'#8B5CF6',icon:'film'},
+  {id:'kesehatan',label:'Kesehatan',color:'#E06B9A',icon:'heart'},
+  {id:'lainnya',label:'Lainnya',color:'#8B8E98',icon:'circle'},
+];
+const CAT=Object.fromEntries(CATEGORIES.map(c=>[c.id,c]));
+const NM=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const ND=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+
+const pad=x=>String(x).padStart(2,'0');
+const dstr=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const today=()=>dstr(new Date());
+const monthOf=s=>s.slice(0,7);
+const rp=n=>'Rp '+Math.round(n||0).toLocaleString('id-ID');
+const prettyMonth=m=>{const[y,mo]=m.split('-');return `${NM[+mo-1]} ${y}`;};
+const prettyDate=s=>{const[y,mo,d]=s.split('-').map(Number);const dt=new Date(y,mo-1,d);return `${ND[dt.getDay()]}, ${d} ${NM[mo-1]}`;};
+
+function loadExp(){try{return JSON.parse(localStorage.getItem('expenses_v1'))||[];}catch(e){return[];}}
+function saveExp(){localStorage.setItem('expenses_v1',JSON.stringify(expenses));}
+
+let expenses=loadExp();
+let viewMonth=monthOf(today());
+let form={amount:'',category:'makanan',note:'',date:today()};
+let confirmId=null;
+let settingsOpen=false;
+let savedNote=false;
+let apiKey=localStorage.getItem('anthropic_key')||'';
+let model=localStorage.getItem('anthropic_model')||'claude-haiku-4-5-20251001';
+let scan={preview:null,scanning:false,error:'',ok:false};
+
+/* ---------- render ---------- */
+function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+function render(){
+  const monthExp=expenses.filter(e=>monthOf(e.date)===viewMonth)
+    .sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
+  const monthTotal=monthExp.reduce((s,e)=>s+e.amount,0);
+  const todayTotal=expenses.filter(e=>e.date===today()).reduce((s,e)=>s+e.amount,0);
+  const days=new Set(monthExp.map(e=>e.date)).size;
+  const avg=days?monthTotal/days:0;
+
+  // breakdown
+  const bmap={};monthExp.forEach(e=>bmap[e.category]=(bmap[e.category]||0)+e.amount);
+  const breakdown=Object.entries(bmap).map(([id,t])=>({id,t})).sort((a,b)=>b.t-a.t);
+
+  // groups
+  const gmap=new Map();
+  monthExp.forEach(e=>{if(!gmap.has(e.date))gmap.set(e.date,[]);gmap.get(e.date).push(e);});
+
+  const chips=CATEGORIES.map(c=>{
+    const on=form.category===c.id;
+    return `<button class="chip" data-cat="${c.id}" style="${on?`background:${c.color};color:#fff;border-color:${c.color}`:''}">${svg(c.icon)} ${c.label}</button>`;
+  }).join('');
+
+  let scanUI;
+  if(!scan.preview){
+    scanUI=`<button class="scan" id="btnScan">${svg('cam')} Scan struk dari foto</button>`;
+  }else{
+    const bg=scan.error?'#FCE9E4':(scan.ok?'var(--greenSoft)':'var(--card)');
+    const bd=scan.error?'#F3C7BC':'var(--line)';
+    let msg;
+    if(scan.scanning) msg=`<span style="display:flex;align-items:center;gap:7px;color:var(--muted)">${svg('loader')} Membaca struk…</span>`.replace('class="i"','class="i spin"');
+    else if(scan.error) msg=`<span style="color:var(--coral)">${esc(scan.error)}</span>`;
+    else if(scan.ok) msg=`<span style="display:flex;align-items:center;gap:7px;color:var(--green);font-weight:600">${svg('spark')} Terbaca — periksa lalu simpan</span>`;
+    else msg=`<span style="color:var(--muted)">Foto struk terpasang</span>`;
+    scanUI=`<div class="scanbox" style="background:${bg};border-color:${bd}">
+      <img src="${scan.preview}" alt="Struk"/>
+      <div class="msg">${msg}</div>
+      ${scan.scanning?'':`<button class="iconbtn" id="btnClearScan" aria-label="Hapus foto">${svg('x')}</button>`}
+    </div>`;
+  }
+
+  const settingsUI = settingsOpen ? `
+    <div class="settings">
+      <h3>Pengaturan scan struk</h3>
+      <p>Fitur scan memakai API Claude milik Anda sendiri. Kuncinya disimpan hanya di HP ini dan tidak dikirim ke mana pun selain ke server Anthropic saat memindai. Setiap pindai memakai kuota API Anda (biaya kecil). Pencatatan manual tetap berfungsi tanpa ini.</p>
+      <label>Anthropic API key</label>
+      <input class="lg" id="keyInput" type="password" placeholder="sk-ant-..." value="${esc(apiKey)}" autocomplete="off"/>
+      <label>Model (opsional)</label>
+      <input class="lg" id="modelInput" type="text" value="${esc(model)}" autocomplete="off"/>
+      <div class="srow">
+        <button class="btn2 primary" id="btnSaveKey">Simpan</button>
+        <button class="btn2" id="btnExport">Ekspor CSV</button>
+      </div>
+      ${savedNote?'<div class="savednote">Tersimpan.</div>':''}
+      <p style="margin-top:12px">Model hemat: <b>claude-haiku-4-5-20251001</b>. Untuk hasil lebih akurat: <b>claude-sonnet-4-6</b>. Dapatkan API key di console.anthropic.com.</p>
+    </div>` : '';
+
+  const breakdownUI = breakdown.length ? `
+    <div class="sectlabel">Rincian per kategori</div>
+    ${breakdown.map(r=>{const c=CAT[r.id];const pct=monthTotal?r.t/monthTotal*100:0;return `
+      <div class="brow">
+        <div class="top"><span style="display:flex;align-items:center;gap:7px">${svg(c.icon,c.color)} ${c.label}</span><span class="mono" style="font-weight:600">${rp(r.t)}</span></div>
+        <div class="bar"><div style="width:${pct}%;background:${c.color}"></div></div>
+      </div>`;}).join('')}` : '';
+
+  let historyUI;
+  if(gmap.size===0){
+    historyUI=`<div class="empty">${svg('cal','',26)}<div style="font-size:14px;margin-top:8px">Belum ada catatan di ${prettyMonth(viewMonth)}.</div><div style="font-size:13px;margin-top:3px;opacity:.85">Masukkan nominal di atas untuk mulai mencatat.</div></div>`;
+  }else{
+    historyUI=[...gmap.entries()].map(([d,items])=>{
+      const dt=items.reduce((s,e)=>s+e.amount,0);
+      return `<div class="daygroup">
+        <div class="dayhead"><span class="d">${prettyDate(d)}</span><span class="t mono">${rp(dt)}</span></div>
+        <div class="list">${items.map(e=>{const c=CAT[e.category]||CAT.lainnya;
+          const del = confirmId===e.id
+            ? `<div style="display:flex;gap:4px"><button class="iconbtn" data-delok="${e.id}" style="color:var(--coral)">${svg('trash')}</button><button class="iconbtn" data-delcancel="1">${svg('x')}</button></div>`
+            : `<button class="iconbtn" data-del="${e.id}">${svg('trash')}</button>`;
+          return `<div class="item">
+            <div class="ic" style="background:${c.color}1A">${svg(c.icon,c.color)}</div>
+            <div style="flex:1;min-width:0"><div class="name">${esc(e.note||c.label)}</div>${e.note?`<div class="sub">${c.label}</div>`:''}</div>
+            <div class="amt mono">${rp(e.amount)}</div>${del}
+          </div>`;}).join('')}</div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('app').innerHTML=`
+    <div class="band">
+      <div class="eyebrow">${svg('wallet')} Catatan Pengeluaran</div>
+      <button class="gear" id="btnSettings" aria-label="Pengaturan">${svg('gear')}</button>
+      <div class="monthnav">
+        <button class="mbtn" data-month="-1" aria-label="Bulan sebelumnya">${svg('left')}</button>
+        <div style="text-align:center">
+          <div class="monthlabel">${prettyMonth(viewMonth)}</div>
+          <div class="total mono">${rp(monthTotal)}</div>
+        </div>
+        <button class="mbtn" data-month="1" aria-label="Bulan berikutnya">${svg('right')}</button>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">Hari ini</div><div class="v mono">${rp(todayTotal)}</div></div>
+        <div class="stat"><div class="k">Rata-rata / hari</div><div class="v mono">${rp(avg)}</div></div>
+        <div class="stat"><div class="k">Hari tercatat</div><div class="v mono">${days}</div></div>
+      </div>
+    </div>
+    <div class="body">
+      ${settingsUI}
+      <div class="card">
+        <div class="cardtitle">Tambah pengeluaran</div>
+        <input id="fileInput" type="file" accept="image/*" style="display:none"/>
+        ${scanUI}
+        <div class="amtwrap">
+          <span class="pre mono">Rp</span>
+          <input class="lg mono" id="amount" inputmode="numeric" placeholder="0" value="${form.amount?Number(form.amount).toLocaleString('id-ID'):''}"/>
+        </div>
+        <div class="chips">${chips}</div>
+        <div class="row2">
+          <input class="lg" id="note" placeholder="Catatan (opsional)" value="${esc(form.note)}"/>
+          <input class="lg" id="date" type="date" max="${today()}" value="${form.date}"/>
+        </div>
+        <button class="add" id="btnAdd" ${(!form.amount||Number(form.amount)<=0)?'disabled':''}>${svg('plus')} Catat pengeluaran</button>
+      </div>
+      ${breakdownUI}
+      <div class="sectlabel">Riwayat</div>
+      ${historyUI}
+      <div style="height:40px"></div>
+    </div>`;
+  bind();
+}
+
+/* ---------- actions ---------- */
+function addExpense(){
+  const v=Number(form.amount);
+  if(!v||v<=0)return;
+  expenses=[{id:Date.now()+'-'+Math.random().toString(36).slice(2,7),amount:v,category:form.category,note:form.note.trim(),date:form.date},...expenses];
+  saveExp();
+  viewMonth=monthOf(form.date);
+  form={amount:'',category:form.category,note:'',date:today()};
+  scan={preview:null,scanning:false,error:'',ok:false};
+  render();
+}
+function removeExpense(id){expenses=expenses.filter(e=>e.id!==id);saveExp();confirmId=null;render();}
+function stepMonth(dir){const[y,m]=viewMonth.split('-').map(Number);const dt=new Date(y,m-1+dir,1);viewMonth=`${dt.getFullYear()}-${pad(dt.getMonth()+1)}`;render();}
+
+function fileToB64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=()=>rej(new Error('read'));r.readAsDataURL(file);});}
+
+async function scanBill(file){
+  if(!file)return;
+  const type=file.type||'image/jpeg';
+  const SUPP=['image/jpeg','image/png','image/gif','image/webp'];
+  scan={preview:URL.createObjectURL(file),scanning:false,error:'',ok:false};
+  if(!SUPP.includes(type)){scan.error='Format foto belum didukung (JPG/PNG/WEBP).';render();return;}
+  if(!apiKey){scan.error='Tambahkan API key di Pengaturan (ikon roda gigi) untuk mengaktifkan scan.';render();return;}
+  scan.scanning=true;render();
+  try{
+    const b64=await fileToB64(file);
+    const prompt='Kamu membaca sebuah struk/bill belanja. Balas HANYA dengan satu objek JSON valid, tanpa teks lain, tanpa markdown, tanpa backtick.\n\nFormat: {"amount": <total akhir yang dibayar dalam Rupiah sebagai integer tanpa titik/koma>, "date": "<YYYY-MM-DD atau null>", "note": "<nama toko/merchant singkat maks 4 kata>", "category": "<salah satu: makanan, transport, belanja, tagihan, hiburan, kesehatan, lainnya>"}\n\nAturan:\n- amount = TOTAL akhir/total bayar/grand total (termasuk pajak & service), bukan subtotal.\n- Jika ada beberapa angka, pilih total pembayaran terbesar.\n- category dari jenis usaha: resto/cafe/supermarket=makanan; SPBU/ojek/parkir/tiket=transport; retail/pakaian/elektronik=belanja; listrik/air/internet/pulsa=tagihan; bioskop/game=hiburan; apotek/klinik/RS=kesehatan; selain itu=lainnya.\n- Jika angka tidak terbaca, amount=0.\n- Balas JSON saja.';
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:model,max_tokens:1000,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:type,data:b64}},{type:'text',text:prompt}]}]})
+    });
+    const data=await res.json();
+    if(data.error){throw new Error(data.error.message||'Permintaan ditolak');}
+    const text=(data.content||[]).filter(i=>i.type==='text').map(i=>i.text).join('\n');
+    const parsed=JSON.parse(text.replace(/```json|```/g,'').trim());
+    let ok=false;
+    if(parsed.amount&&Number(parsed.amount)>0){form.amount=String(Math.round(Number(parsed.amount)));ok=true;}
+    if(parsed.category&&CAT[parsed.category])form.category=parsed.category;
+    if(parsed.note)form.note=String(parsed.note).slice(0,40);
+    if(parsed.date&&/^\d{4}-\d{2}-\d{2}$/.test(parsed.date)&&parsed.date<=today())form.date=parsed.date;
+    scan.scanning=false;
+    if(ok)scan.ok=true; else scan.error='Nominal tidak terbaca. Coba foto lebih jelas atau isi manual.';
+  }catch(e){
+    scan.scanning=false;
+    scan.error='Gagal membaca struk: '+(e.message||'coba lagi')+'. Cek API key/koneksi, atau isi manual.';
+  }
+  render();
+}
+
+function exportCSV(){
+  const rows=[['tanggal','kategori','catatan','jumlah']].concat(
+    expenses.slice().sort((a,b)=>a.date<b.date?1:-1).map(e=>[e.date,(CAT[e.category]||{}).label||e.category,e.note||'',e.amount]));
+  const csv=rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`pengeluaran-${today()}.csv`;a.click();
+}
+
+/* ---------- bind ---------- */
+function bind(){
+  const q=s=>document.getElementById(s);
+  q('btnSettings').onclick=()=>{settingsOpen=!settingsOpen;savedNote=false;render();};
+  document.querySelectorAll('[data-month]').forEach(b=>b.onclick=()=>stepMonth(+b.dataset.month));
+  const scanBtn=q('btnScan'); if(scanBtn)scanBtn.onclick=()=>q('fileInput').click();
+  const fi=q('fileInput'); if(fi)fi.onchange=e=>scanBill(e.target.files&&e.target.files[0]);
+  const clr=q('btnClearScan'); if(clr)clr.onclick=()=>{scan={preview:null,scanning:false,error:'',ok:false};const f=q('fileInput');if(f)f.value='';render();};
+
+  const amt=q('amount');
+  amt.oninput=e=>{const raw=e.target.value.replace(/\D/g,'');form.amount=raw;e.target.value=raw?Number(raw).toLocaleString('id-ID'):'';const p=e.target.value.length;e.target.setSelectionRange(p,p);
+    q('btnAdd').disabled=!(form.amount&&Number(form.amount)>0);};
+  amt.onkeydown=e=>{if(e.key==='Enter')addExpense();};
+
+  document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{form.category=b.dataset.cat;render();});
+  const note=q('note'); note.oninput=e=>form.note=e.target.value; note.onkeydown=e=>{if(e.key==='Enter')addExpense();};
+  const date=q('date'); date.onchange=e=>form.date=e.target.value;
+  q('btnAdd').onclick=addExpense;
+
+  document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{confirmId=b.dataset.del;render();});
+  document.querySelectorAll('[data-delok]').forEach(b=>b.onclick=()=>removeExpense(b.dataset.delok));
+  document.querySelectorAll('[data-delcancel]').forEach(b=>b.onclick=()=>{confirmId=null;render();});
+
+  const kb=q('btnSaveKey');
+  if(kb)kb.onclick=()=>{apiKey=q('keyInput').value.trim();model=q('modelInput').value.trim()||'claude-haiku-4-5-20251001';
+    localStorage.setItem('anthropic_key',apiKey);localStorage.setItem('anthropic_model',model);savedNote=true;render();};
+  const ex=q('btnExport'); if(ex)ex.onclick=exportCSV;
+}
+
+render();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('service-worker.js').catch(()=>{}));}
+</script>
+</body>
+</html>
